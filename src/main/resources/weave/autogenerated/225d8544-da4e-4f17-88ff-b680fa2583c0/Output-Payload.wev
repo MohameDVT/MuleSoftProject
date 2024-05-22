@@ -1,0 +1,15 @@
+%dw 2.0
+
+type auto_225d8544_da4e_4f17_88ff_b680fa2583c0_Output_Payload = {
+  owner: String, 
+  address_source?: String, 
+  address_destination?: String, 
+  ID?: String, 
+  create_date?: String, 
+  total_items: Number, 
+  items: Array<{    quantity: Number,     price: String,     id: String,     _?: Any  }>, 
+  update_date?: String, 
+  status: "0" | "1" | "2" | "3" | "4", 
+  _?: Any
+}
+
