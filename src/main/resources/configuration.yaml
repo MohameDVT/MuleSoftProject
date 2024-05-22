@@ -1,0 +1,10 @@
+http:
+  port: "8084"
+  host: "127.0.0.1"
+
+  
+    
+
+  
+mongodb:
+  url: "mongodb+srv://bahaa:T3ZzQQ-_dNBbJyF@cluster0.rake1r5.mongodb.net/eCommerceDB?retryWrites=true&w=majority&appName=Cluster"

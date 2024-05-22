@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:mongo="http://www.mulesoft.org/schema/mule/mongo"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/mongo http://www.mulesoft.org/schema/mule/mongo/current/mule-mongo.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<sub-flow name="finder" doc:id="9cc09d78-3b4d-4a90-a414-0ced7aa90aad" >
+		<mongo:find-documents collectionName="return_shipments" fields="ID,total_items,items,status,address_source,address_destination,owner,create_date,update_date,ship_date" doc:name="Find documents" doc:id="8dc84e1e-1169-4233-bb1e-68ec61ec8bd0" config-ref="MongoDB_Config" >
+			<mongo:query ><![CDATA[#[vars.query]]]></mongo:query>
+		</mongo:find-documents>
+		<choice doc:name="Choice" doc:id="fbcfe766-4dbc-4c33-b524-455833837674" >
+			<when expression="#[sizeOf(payload)&gt;=1]" >
+				<ee:transform doc:name="Transform Message" doc:id="62e5db1c-da97-4d56-bb7c-eb237b4ed06b" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[ %dw 2.0 output application/json --- payload ]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<raise-error doc:name="Raise error" doc:id="8cabe6eb-70e7-4dc0-ad76-bc2e70431d10" type="CUSTOM_ERROR:INVALID_ID" description="order not found" />
+			</otherwise>
+		</choice>
+	</sub-flow>
+	<flow name="get_all_orders" doc:id="565e35bf-08ef-41f4-b3cf-1f9b2a369750" >
+		<set-variable value="#[message.attributes.queryParams.status]" doc:name="status query" doc:id="dc7e1444-a153-4981-ba21-abc270a4ccbf" variableName="status"/>
+		<set-variable value='#[%dw 2.0 output application/json --- if (vars.status != null and vars.status != "") { "status" : vars.status as String } else {}]' doc:name="set_query_var" doc:id="bf819350-fc26-4d17-9b47-bb3333c79211" variableName="query"/>
+		<flow-ref doc:name="ref_finder" doc:id="e9cafcfd-d385-49b6-b929-49ef09968476" name="finder"/>
+	</flow>
+	<flow name="post_an_order" doc:id="890d6c48-738a-4ca4-b1d9-1c36ec952597" >
+		<mongo:insert-document doc:name="Insert document" doc:id="9289cdf8-39f0-4716-8b07-80610b8d70a7" config-ref="MongoDB_Config" collectionName="return_shipments"> </mongo:insert-document>
+		<ee:transform doc:name="Transform Message" doc:id="0d448f48-65cd-415d-b0ab-b0bc94500eab" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	
+</flow>
+	<flow name="get_id" doc:id="225d8544-da4e-4f17-88ff-b680fa2583c0" >
+		<set-variable value="#[message.attributes.uriParams]" doc:name="ID" doc:id="dd053b6a-31d8-4bdd-9c63-2107f1771067" variableName="ID"/>
+		<set-variable value='#[%dw 2.0 output application/json --- { "ID" : vars.ID.ID as String }]' doc:name="set_query_var" doc:id="c1fd67db-2913-45e7-b3e8-5d17bc142afe" variableName="query"/>
+		<flow-ref doc:name="ref_finder" doc:id="2436cb11-cbd8-4540-9ab5-a2451428f40f" name="finder" />
+	
+</flow>
+	<flow name="delete_order_id" doc:id="e7f679e0-8432-41b4-9f41-5525b2164e2e" >
+		<set-variable value="#[message.attributes.uriParams]" doc:name="ID" doc:id="6d6b2e3a-ecc4-400f-ba3f-752893259b8f" variableName="ID"/>
+		<mongo:remove-documents collectionName="return_shipments" doc:name="Remove documents" doc:id="620e3d1e-1be6-4dee-98a4-b5306e18a159" config-ref="MongoDB_Config">
+			<mongo:query ><![CDATA[ #[%dw 2.0 output application/json --- { "ID" : vars.ID as String }] ]]></mongo:query>
+		</mongo:remove-documents>
+	<choice doc:name="Choice" doc:id="f6bee86b-0346-42f3-8fab-341c6a96a1b0">
+<when expression="#[payload >= 1]">
+<ee:transform doc:name="Transform Message" doc:id="4b5c84de-6311-46c6-b76d-4f73e2ece655">
+<ee:message>
+<ee:set-payload>
+<![CDATA[ %dw 2.0 output application/json --- "Your order was deleted" ]]>
+</ee:set-payload>
+</ee:message>
+</ee:transform>
+</when>
+<otherwise>
+<raise-error doc:name="InvalidID" doc:id="a7f848b8-f6fd-4000-8688-190403373064" type="CUSTOM_ERROR:INVALID_ID" description="The ID is invalid"/>
+</otherwise>
+</choice>
+	</flow>
+	<flow name="patch_order_id" doc:id="cb594726-3eb0-431b-b4b1-81a2419ee773" >
+		<set-variable value="#[%dw 2.0 output application/json --- payload]" doc:name="json_object_modify" doc:id="df70e1e3-9919-4abc-adf8-23cb2eadead9" variableName="json_object_modify"/>
+<set-variable value="#[message.attributes.uriParams]" doc:name="ID" doc:id="19d1ea94-c8b1-41a2-b7d4-7a09a1dedd28" variableName="ID"/>
+<mongo:update-documents collectionName="return_orders" doc:name="Update documents" doc:id="2f1ea879-a508-4a2c-b490-1e19d85329d6" config-ref="MongoDB_Config">
+			<mongo:query ><![CDATA[ #[%dw 2.0 output application/json --- { "ID" : vars.ID.ID as String }] ]]></mongo:query>
+		</mongo:update-documents>
+		<choice doc:name="Choice" doc:id="1cdfa98c-96b4-43d9-af03-51d097e66e63">
+<when expression="#[payload.matched == 1 and payload.modified == 1]">
+<ee:transform doc:name="Transform Message" doc:id="d5e33190-b53d-458a-87e6-c441c039925b">
+<ee:message>
+<ee:set-payload><![CDATA[ %dw 2.0 output application/json --- vars.json_object_modify]]>
+</ee:set-payload>
+</ee:message>
+</ee:transform>
+</when>
+<when expression="#[payload.matched ==1 and payload.modified == 0]">
+<ee:transform doc:name="Transform Message" doc:id="b538ac57-d36b-4c02-9d81-bfdb158f2983">
+<ee:message>
+<ee:set-payload>
+<![CDATA[ %dw 2.0 output application/json --- "The information you want to update is already there" ]]>
+</ee:set-payload>
+</ee:message>
+</ee:transform>
+</when>
+<otherwise>
+<raise-error doc:name="Invalid ID" doc:id="d90279ec-5747-43ea-ad3d-d9af6ffad781" type="CUSTOM_ERROR:INVALID_ID" description="The ID is invalid"/>
+</otherwise>
+</choice>
+</flow>
+</mule>

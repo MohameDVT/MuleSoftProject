@@ -1,0 +1,35 @@
+#%RAML 1.0 DataType
+
+
+
+type: object
+properties: 
+  total_items:
+    type: integer
+  items:
+    type: array
+    items:
+      type: object
+      properties:
+        id:
+          type: string
+        quantity:
+          type: integer
+        price:
+          type: string
+        state:
+          type: integer
+
+  ID?: string    
+  status:
+    type: string
+    enum: [en_attente_de_validation,validation_automatique,action_humaine_requise,action_humaine_success,action_humaine_no_sucess]   # variable de validation 0 par défaut ; dès que l'order est crée , 1: lorsque il y a validation automatique , 2 : lorsque ca demande une validation humaine et 3 : lorsque la validation humaine est validé , si la validation n'est pas faite 4
+     
+
+  address_source?: string
+  address_destination?: string
+  create_date?: string
+  ship_date?: string
+  update_date?: string
+  owner: string
+

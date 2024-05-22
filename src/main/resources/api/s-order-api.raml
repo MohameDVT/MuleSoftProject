@@ -1,0 +1,75 @@
+#%RAML 1.0
+title: OrderAPI
+description: This is the order API
+
+# Configuration:
+types:
+  OrderType: !include /DataType/dataType.raml
+
+# Traitement de données:
+/shipments:
+  get:
+    description: Get orders
+    queryParameters:
+      status:
+        type: string
+        required: false
+        enum: [en_attente_de_validation,validation_automatique,action_humaine_requise,action_humaine_success,action_humaine_no_sucess]
+        description: Filter orders by status (optional)
+    responses:
+      200:
+        body:
+          application/json:
+            type: OrderType[]
+            examples: 
+              output: !include example/OrdersExample.raml
+
+  post:
+    description: Create an order
+    # body: 
+      # application/json:
+        # type: OrderType
+        # example: !include example/OrderExampleNoID.raml
+    responses:
+      201:
+        body:
+          application/json:
+            examples:
+              message: Order created.
+
+  /{ID}:
+    get:
+      description: Get orders by ID
+      responses:
+        200:
+          body:
+            application/json:
+              type: OrderType
+              examples: 
+                output: !include example/OrderExample.raml
+
+    delete:
+      description: Delete orders by ID
+      responses:
+          200:
+            body:
+              application/json:
+                examples: 
+                  message: Order deleted
+
+    patch:
+      description: Update an order
+      #body:
+        #application/json:
+          
+          #type: OrderType
+          #examples:
+            #output: !include example/OrderExample.raml
+      responses:
+        200:
+          body:
+            application/json:
+              examples:
+                message: Order updated
+
+                
